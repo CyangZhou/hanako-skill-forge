@@ -1,0 +1,17 @@
+{
+  "schema": "hanako.skill.forge.actions.v1",
+  "actions": {
+    "module_index": {
+      "description": "列出元技能模块与职责"
+    },
+    "audit_refs": {
+      "description": "扫描 Markdown 引用断链"
+    },
+    "audit_terms": {
+      "description": "扫描旧术语、坏味道或指定词"
+    },
+    "audit_skill": {
+      "description": "输出整体健康检查摘要"
+    }
+  }
+}
