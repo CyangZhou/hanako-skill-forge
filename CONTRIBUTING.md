@@ -52,6 +52,7 @@ Before opening a pull request, verify:
 - [ ] inputs and outputs are described where relevant
 - [ ] at least one example or concrete usage path is included when needed
 - [ ] related docs are updated
+- [ ] action contract stays aligned if script actions changed
 - [ ] `python scripts/main.py --action audit_skill` passes when documentation changed
 
 ## Pull request guidance

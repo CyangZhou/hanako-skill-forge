@@ -105,7 +105,8 @@ Typical entry order:
 2. read `modules/route/01-总控路由.md`
 3. continue only into the branch that matches the task
 4. read templates only when needed
-5. run scripts only when audit or closure is needed
+5. use trigger samples when calibrating description boundaries
+6. run scripts only when audit or closure is needed
 
 ## What you can do with it
 
@@ -145,10 +146,10 @@ Adds new capability without breaking the current structure.
 Provides failure categories, recovery loops, retry discipline, and post-fix validation.
 
 ### `review`
-Defines acceptance and release checks.
+Defines acceptance, release, evidence, and trigger calibration material.
 
 ### `templates`
-Provides reusable templates for requirement cards, blueprints, maintenance checks, recovery notes, and delivery summaries.
+Provides reusable templates for requirement cards, blueprints, maintenance checks, recovery notes, status tracking, checkpoints, and delivery summaries.
 
 ## Quick start
 
@@ -170,7 +171,7 @@ python scripts/main.py --action audit_skill
 - `module_index` — list modules and roles
 - `audit_refs` — check broken Markdown references
 - `audit_terms` — detect leftover terms and bad smells
-- `audit_skill` — run an overall repository health check
+- `audit_skill` — run an overall repository health check, including action contract alignment
 
 ## Examples
 
@@ -246,6 +247,7 @@ The goal is not to copy their wording, but to absorb what improves structure, ma
 
 - `README.md` — project overview and public onboarding
 - `SKILL.md` — skill entry and operational route
+- `schemas/actions_contracts.json` — script action contract
 - `CHANGELOG.md` — notable public changes
 - `CONTRIBUTING.md` — how to contribute responsibly
 - `SECURITY.md` — how to report security concerns

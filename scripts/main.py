@@ -5,6 +5,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import Any
 
 
 DEFAULT_TERMS = [
@@ -18,6 +19,7 @@ DEFAULT_TERMS = [
 ]
 
 REF_RE = re.compile(r"([A-Za-z0-9_./\-\u4e00-\u9fff]+\.md)")
+ALLOWED_ACTIONS = {"module_index", "audit_refs", "audit_terms", "audit_skill"}
 
 
 def ensure_utf8() -> None:
@@ -54,6 +56,58 @@ def md_files(base: Path) -> list[Path]:
         if target.exists():
             paths.extend(sorted(target.rglob("*.md")))
     return [path for path in paths if path.exists()]
+
+
+def schema_file(base: Path) -> Path:
+    return base / "schemas" / "actions_contracts.json"
+
+
+def load_actions_contract(base: Path) -> dict[str, Any]:
+    target = schema_file(base)
+    return json.loads(target.read_text(encoding="utf-8"))
+
+
+def action_names_from_contract(base: Path) -> set[str]:
+    payload = load_actions_contract(base)
+    direct_actions = payload.get("actions")
+    if isinstance(direct_actions, dict) and direct_actions:
+        return set(direct_actions.keys())
+
+    schema_actions = (
+        payload.get("properties", {})
+        .get("actions", {})
+        .get("properties", {})
+    )
+    if isinstance(schema_actions, dict):
+        return set(schema_actions.keys())
+    return set()
+
+
+def audit_action_contract(base: Path) -> dict:
+    schema_path = schema_file(base)
+    if not schema_path.exists():
+        return {
+            "ok": False,
+            "missing_schema": True,
+            "schema_path": str(schema_path.relative_to(base)),
+            "declared_actions": [],
+            "script_actions": sorted(ALLOWED_ACTIONS),
+            "missing_in_schema": sorted(ALLOWED_ACTIONS),
+            "extra_in_schema": [],
+        }
+
+    declared = action_names_from_contract(base)
+    missing_in_schema = sorted(ALLOWED_ACTIONS - declared)
+    extra_in_schema = sorted(declared - ALLOWED_ACTIONS)
+    return {
+        "ok": not missing_in_schema and not extra_in_schema,
+        "missing_schema": False,
+        "schema_path": str(schema_path.relative_to(base)),
+        "declared_actions": sorted(declared),
+        "script_actions": sorted(ALLOWED_ACTIONS),
+        "missing_in_schema": missing_in_schema,
+        "extra_in_schema": extra_in_schema,
+    }
 
 
 def scan_refs(base: Path) -> dict:
@@ -119,12 +173,14 @@ def module_index() -> dict:
 def audit_skill(base: Path) -> dict:
     refs = scan_refs(base)
     terms = scan_terms(base, DEFAULT_TERMS, exclude=["scripts/main.py"])
+    contract = audit_action_contract(base)
     return {
-        "ok": len(refs["missing_refs"]) == 0 and len(terms["hits"]) == 0,
+        "ok": len(refs["missing_refs"]) == 0 and len(terms["hits"]) == 0 and contract["ok"],
         "docs": len(md_files(base)),
         "checked_refs": refs["checked_refs"],
         "missing_refs": refs["missing_refs"],
         "term_hits": terms["hits"],
+        "action_contract": contract,
     }
 
 
@@ -140,6 +196,15 @@ def main(argv: list[str] | None = None) -> int:
     input_data = load_input(args.input)
     action = args.action.strip()
 
+    if action not in ALLOWED_ACTIONS:
+        return emit(
+            {
+                "ok": False,
+                "error": f"unknown action: {action}",
+                "allowed_actions": sorted(ALLOWED_ACTIONS),
+            }
+        )
+
     if action == "module_index":
         return emit(module_index())
     if action == "audit_refs":
@@ -153,7 +218,7 @@ def main(argv: list[str] | None = None) -> int:
     if action == "audit_skill":
         return emit(audit_skill(base))
 
-    return emit({"ok": False, "error": f"unknown action: {action}"})
+    return emit({"ok": False, "error": f"unhandled action: {action}"})
 
 
 if __name__ == "__main__":
